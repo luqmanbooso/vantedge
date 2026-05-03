@@ -1,0 +1,96 @@
+{
+  "entities": {
+    "Campaign": {
+      "title": "Campaign",
+      "description": "A marketing campaign entry",
+      "type": "object",
+      "properties": {
+        "campaign_name": {
+          "type": "string",
+          "description": "The name of the campaign"
+        },
+        "campaign_plan": {
+          "type": "string",
+          "description": "The plan for the campaign"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the campaign"
+        },
+        "budget": {
+          "type": "number",
+          "description": "The budget for the campaign"
+        },
+        "actual_spend": {
+          "type": "number",
+          "description": "The actual amount spent"
+        },
+        "variance": {
+          "type": "number",
+          "description": "The difference between budget and actual spend"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "active", "completed"],
+          "description": "Current status of the campaign"
+        },
+        "category": {
+          "type": "string",
+          "description": "Marketing category (e.g., SEO, Social Media, Email)"
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date",
+          "description": "When the campaign starts"
+        },
+        "end_date": {
+          "type": "string",
+          "format": "date",
+          "description": "When the campaign ends"
+        },
+        "target_audience": {
+          "type": "string",
+          "description": "The target audience for the campaign"
+        },
+        "market": {
+          "type": "string",
+          "description": "Target market"
+        },
+        "creatorId": {
+          "type": "string",
+          "description": "The user ID of the person who created the campaign"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation"
+        }
+      },
+      "required": ["campaign_name", "status", "category", "creatorId", "createdAt"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Private user information",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "displayName": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "firestore": {
+    "/campaigns/{campaignId}": {
+      "schema": "Campaign",
+      "description": "Collection of all marketing campaigns"
+    },
+    "/users/{userId}/private/profile": {
+      "schema": "UserProfile",
+      "description": "Private user profiles"
+    }
+  }
+}

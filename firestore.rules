@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() { return request.auth != null; }
+    function isEmailVerified() { return request.auth.token.email_verified == true; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidCampaign(data) {
+      return data.keys().hasAll(['campaign_name', 'status', 'category', 'creatorId', 'createdAt']) &&
+             data.keys().size() <= 14 && 
+             data.campaign_name is string && data.campaign_name.size() > 0 && data.campaign_name.size() <= 255 &&
+             data.status in ['draft', 'active', 'completed'] &&
+             data.category is string && data.category.size() <= 50 &&
+             data.creatorId == request.auth.uid &&
+             data.createdAt == request.time &&
+             (data.get('budget', 0) is number) &&
+             (data.get('actual_spend', 0) is number) &&
+             (data.get('variance', 0) is number) &&
+             (data.get('campaign_plan', '') is string && data.get('campaign_plan', '').size() <= 100) &&
+             (data.get('description', '') is string && data.get('description', '').size() <= 5000) &&
+             (data.get('start_date', '') is string) &&
+             (data.get('end_date', '') is string) &&
+             (data.get('target_audience', '') is string && data.get('target_audience', '').size() <= 255) &&
+             (data.get('market', '') is string && data.get('market', '').size() <= 10);
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['email']) &&
+             data.email == request.auth.token.email &&
+             (data.get('displayName', '') is string && data.get('displayName', '').size() <= 100);
+    }
+
+    // --- Collections ---
+
+    match /campaigns/{campaignId} {
+      allow list: if isSignedIn(); // All signed in users can list/query
+      allow get: if isSignedIn();  // All signed in users can get specific doc
+      
+      allow create: if isSignedIn() && isValidCampaign(incoming());
+      
+      allow update: if isOwner(existing().creatorId) && 
+                      isValidCampaign(incoming()) &&
+                      incoming().createdAt == existing().createdAt &&
+                      incoming().creatorId == existing().creatorId;
+                      
+      allow delete: if isOwner(existing().creatorId);
+    }
+
+    match /users/{userId} {
+      match /private/profile {
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidUserProfile(incoming());
+        allow update: if isOwner(userId) && 
+                        isValidUserProfile(incoming()) &&
+                        incoming().email == existing().email;
+      }
+    }
+  }
+}
